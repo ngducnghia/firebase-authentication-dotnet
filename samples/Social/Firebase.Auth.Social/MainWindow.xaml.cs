@@ -17,8 +17,8 @@
         // TODO: fill these out
         public const string FacebookAppId = "<FACEBOOK APP ID>"; // https://developers.facebook.com/
         public const string GoogleClientId = "<GOOGLE CLIENT ID>"; // https://console.developers.google.com/apis/credentials
-        public const string FirebaseAppKey = "<FIREBASE APP KEY>"; // https://console.firebase.google.com/
-        public const string FirebaseAppUri = "https://<YOUR_FIREBASE_APP>.firebaseio.com/";
+        public const string FirebaseAppKey = "AIzaSyChUBlWJKKWjUxUj63h1PKMZcXaJCPzibk"; // https://console.firebase.google.com/
+        public const string FirebaseAppUri = "https://triptrak-app.firebaseio.com/";
 
         public MainWindow()
         {
@@ -32,7 +32,11 @@
             this.Browser.Visibility = Visibility.Visible;
             this.Browser.Navigate(loginUri);
         }
-
+        private void EmailClick(object sender, RoutedEventArgs e)
+        {
+            this.FetchFirebaseData("ng_ducnghia@yahoo.com", "123456");
+        }
+            
         private async void GoogleClick(object sender, RoutedEventArgs e)
         {
             try
@@ -127,5 +131,37 @@
                 MessageBox.Show(ex.ToString());
             }
         }
+
+        private async void FetchFirebaseData(string email, string password)
+        {
+            try
+            {
+                // Convert the access token to firebase token
+                var auth = new FirebaseAuthProvider(new FirebaseConfig(FirebaseAppKey));
+                var data = await auth.SignInWithEmailAndPasswordAsync(email, password);
+
+                // Setup FirebaseClient to use the firebase token for data requests
+                var db = new FirebaseClient(
+                       FirebaseAppUri,
+                       new FirebaseOptions
+                       {
+                           AuthTokenAsyncFactory = () => Task.FromResult(data.FirebaseToken)
+                       });
+
+                // TODO: your path within your DB structure.
+                var dbData = await db
+                    .Child("users")
+                    .Child(data.User.LocalId)
+                    .OnceAsync<object>(); // TODO: custom class to represent your data instead of just object
+
+                // TODO: present your data
+                MessageBox.Show(string.Join("\n", dbData.Select(d => d.Object.ToString())));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
     }
 }
